@@ -123,13 +123,12 @@ function traverse(nmap::NodeMap, idx::Int)
 
         energy = get_weight(nmap, idx, child)
         @show [idx, child], energy
+        energy += traverse(nmap, child)
 
         if child == nmap.nodect
             println("\nPATH COMPLETED!\n")
             break
         end
-
-        energy += traverse(nmap, child)
 
         @show energy
         println()
