@@ -117,23 +117,29 @@ function traverse(nmap::NodeMap, idx::Int)
         @show nmap.nodevec[idx].children
     end
 
-    energy = 0
+    # energy = 0
+    evec = Vector{Int}()
     for child in get_children(nmap.nodevec[idx])
 
         energy = get_weight(nmap, idx, child)
         @show [idx, child], energy
-        energy += traverse(nmap, child)
+        # energy += traverse(nmap, child)
+        evec = traverse(nmap, child)
+        push!(evec, energy)
+        @show evec
 
         if child == nmap.nodect
             println("PATH COMPLETED!")
             break
         end
 
-        @show energy
+        # @show energy
+        @show evec
+        @show sum(evec)
         println()
     end
 
-    return energy
+    return evec
 end
 
 function idxToNode(nmap::NodeMap, idx::Int)
@@ -141,10 +147,30 @@ function idxToNode(nmap::NodeMap, idx::Int)
     return nmap.nodevec[idx]
 end
 
+function pathcost(nmap::NodeMap, seq::Vector{Int})
+    totalcost = 0
+    for i in 1:(length(seq)-1)
+        totalcost += get_weight(nmap, seq[i], seq[i+1])
+    end
+
+    println(totalcost)
+    # return totalcost
+end
+
 # nodemap = NodeMap(R)
 # nodemap = NodeMap(S)
-# nodemap = NodeMap(U)
-nodemap = NodeMap(V)
+nodemap = NodeMap(U)
+# nodemap = NodeMap(V)
 # nodemap = NodeMap(W)
 
-traverse(nodemap, 1)
+# traverse(nodemap, 1)
+
+seq1 = [1, 2, 6]
+seq2 = [1, 2, 5, 6]
+seq3 = [1, 2, 4, 5, 6]
+seq4 = [1, 2, 3, 4, 5, 6]
+
+pathcost(nodemap, seq1)
+pathcost(nodemap, seq2)
+pathcost(nodemap, seq3)
+pathcost(nodemap, seq4)
