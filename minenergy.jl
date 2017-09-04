@@ -57,6 +57,10 @@ struct NodeMap
     end
 end
 
+R = [0 4 5 0;
+     0 0 0 4;
+     0 0 0 3;
+     0 0 0 0;]
 
 S = [0 4  0  0;
      0 0 10 15;
@@ -70,6 +74,28 @@ U = [0 10 0  0  0  0;
      0  0 0  0  0 17;
      0  0 0  0  0  0;]
 
+V = [0 15 14 9  0  0  0;
+     0	0  0 0  0 20 37;
+     0	5  0 0 17 30  0;
+     0	0  0 0 23  0  0;
+     0	0  0 0  0  3 20;
+     0	0  0 0  0  0 16;
+     0	0  0 0  0  0  0;]
+
+W = [0 2 2 2 2 2  0 0  0  0  0  0  0 0;
+     0 0 0 0 0 0 10 0  0  0  0  0  0 0;
+     0 0 0 0 0 0 12 5  0  0  0  0  0 0;
+     0 0 0 0 0 0  0 8 14  0  0  0  0 0;
+     0 0 0 0 0 0  0 0  7 11  0  0  0 0;
+     0 0 0 0 0 0  0 0  0  2  0  0  0 0;
+     0 0 0 0 0 0  0 0  0  0  3  0  0 0;
+     0 0 0 0 0 0  0 0  0  0 15  6  0 0;
+     0 0 0 0 0 0  0 0  0  0  0 20 13 0;
+     0 0 0 0 0 0  0 0  0  0  0  0 18 0;
+     0 0 0 0 0 0  0 0  0  0  0  0  0 5;
+     0 0 0 0 0 0  0 0  0  0  0  0  0 5;
+     0 0 0 0 0 0  0 0  0  0  0  0  0 5;
+     0 0 0 0 0 0  0 0  0  0  0  0  0 0;]
 
 function get_children(node::Node)
 
@@ -86,19 +112,38 @@ end
 get_weight(mat::Matrix{Int}, x::Int, y::Int) = return mat[x, y]
 
 function traverse(nmap::NodeMap, idx::Int)
-    # @show nmap.nodevec[idx].id
-    # @show nmap.nodevec[idx].children
-
-    energy = 0
-    for child in get_children(nmap.nodevec[idx])
-        energy = get_weight(nmap, idx, child)
-        @show [idx, child], energy
+    if idx != nmap.nodect
         println()
-        energy += traverse(nmap, child)
-        @show [idx, child], energy
+        @show nmap.nodevec[idx].id
+        @show nmap.nodevec[idx].children
     end
 
-    return energy
+    pathct = 0
+    energy = 0
+    for child in get_children(nmap.nodevec[idx])
+
+        energy = get_weight(nmap, idx, child)
+        @show [idx, child], energy
+
+        if child == nmap.nodect
+            pathct += 1
+            println("\nPATH COMPLETED!\n")
+            break
+        end
+
+        curen, curpath = traverse(nmap, child)
+        # energy += traverse(nmap, child)
+        energy += curen
+        pathct += curpath
+
+        # @show [idx, child], energy
+        @show energy
+        println()
+    end
+
+    # @show pathct
+    # println()
+    return energy, pathct
 end
 
 function idxToNode(nmap::NodeMap, idx::Int)
@@ -106,9 +151,10 @@ function idxToNode(nmap::NodeMap, idx::Int)
     return nmap.nodevec[idx]
 end
 
-nodemap1 = NodeMap(S)
-# nodemap2 = NodeMap(U)
+# nodemap = NodeMap(R)
+# nodemap = NodeMap(S)
+# nodemap = NodeMap(U)
+nodemap = NodeMap(V)
+# nodemap = NodeMap(W)
 
-traverse(nodemap1, 1)
-println()
-# traverse(nodemap2, 1)
+traverse(nodemap, 1)
