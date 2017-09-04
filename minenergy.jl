@@ -86,8 +86,8 @@ end
 get_weight(mat::Matrix{Int}, x::Int, y::Int) = return mat[x, y]
 
 function traverse(nmap::NodeMap, idx::Int)
-    @show nmap.nodevec[idx].id
-    @show nmap.nodevec[idx].children
+    # @show nmap.nodevec[idx].id
+    # @show nmap.nodevec[idx].children
 
     energy = 0
     for child in get_children(nmap.nodevec[idx])
@@ -95,7 +95,7 @@ function traverse(nmap::NodeMap, idx::Int)
         @show [idx, child], energy
         println()
         energy += traverse(nmap, child)
-        @show idx, energy
+        @show [idx, child], energy
     end
 
     return energy
@@ -106,9 +106,9 @@ function idxToNode(nmap::NodeMap, idx::Int)
     return nmap.nodevec[idx]
 end
 
-# nodemap1 = NodeMap(S)
-nodemap2 = NodeMap(U)
+nodemap1 = NodeMap(S)
+# nodemap2 = NodeMap(U)
 
-# traverse(nodemap1, 1)
+traverse(nodemap1, 1)
 println()
-traverse(nodemap2, 1)
+# traverse(nodemap2, 1)
