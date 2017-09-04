@@ -118,7 +118,6 @@ function traverse(nmap::NodeMap, idx::Int)
         @show nmap.nodevec[idx].children
     end
 
-    pathct = 0
     energy = 0
     for child in get_children(nmap.nodevec[idx])
 
@@ -126,24 +125,17 @@ function traverse(nmap::NodeMap, idx::Int)
         @show [idx, child], energy
 
         if child == nmap.nodect
-            pathct += 1
             println("\nPATH COMPLETED!\n")
             break
         end
 
-        curen, curpath = traverse(nmap, child)
-        # energy += traverse(nmap, child)
-        energy += curen
-        pathct += curpath
+        energy += traverse(nmap, child)
 
-        # @show [idx, child], energy
         @show energy
         println()
     end
 
-    # @show pathct
-    # println()
-    return energy, pathct
+    return energy
 end
 
 function idxToNode(nmap::NodeMap, idx::Int)
