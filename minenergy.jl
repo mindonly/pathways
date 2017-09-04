@@ -113,7 +113,6 @@ get_weight(mat::Matrix{Int}, x::Int, y::Int) = return mat[x, y]
 
 function traverse(nmap::NodeMap, idx::Int)
     if idx != nmap.nodect
-        println()
         @show nmap.nodevec[idx].id
         @show nmap.nodevec[idx].children
     end
@@ -126,7 +125,7 @@ function traverse(nmap::NodeMap, idx::Int)
         energy += traverse(nmap, child)
 
         if child == nmap.nodect
-            println("\nPATH COMPLETED!\n")
+            println("PATH COMPLETED!")
             break
         end
 
