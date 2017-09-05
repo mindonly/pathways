@@ -188,11 +188,31 @@ target = size(cost)[1]
 
 
 
+function trailblaze(list1, list2)
+    tempvec = Vector()
+    for item1 in list1
+        for item2 in list2
+            if connected(item1, item2)
+                push!(tempvec, tuplejoin(item1, item2))
+            end
+        end
+    end
 
+    return tempvec
+end
 
+function allspan(pathvec)
+    if isempty(pathvec)
+        return false
+    end
+    for path in pathvec
+        if path[1] != source || path[end] != target
+            return false
+        end
+    end
 
-
-
+    return true
+end
 
 
 tupvec = Vector()
@@ -225,15 +245,39 @@ end
 candidatepaths = vcat(vcat(tupvec, tupvec2), tupvec3)
 
 
+tuplepaths = Vector()
+for item in candidatepaths
+    if item[1] == source && item[end] == target
+        push!(tuplepaths, item)
+    end
+end
+
+finalpaths = Vector()
+for path in tuplepaths
+    a = collect(path)
+    push!(finalpaths, a)
+end
 
 
 
+for path in finalpaths
+    println(unique(path), "\t", pathcost(path))
+end
+println("\nminimum cost: ", mincost(cost))
 
 
+candpathvec = trailblaze(edgelist, edgelist)
+finalpathvec = copy(candpathvec)
+display(candpathvec)
+
+while allspan(candpathvec) == false
+    candpathvec = trailblaze(candpathvec, edgelist)
+    finalpathvec = vcat(finalpathvec, candpathvec)
+end
 
 
 tuplepaths = Vector()
-for item in candidatepaths
+for item in finalpathvec
     if item[1] == source && item[end] == target
         push!(tuplepaths, item)
     end
