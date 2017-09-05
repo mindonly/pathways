@@ -230,7 +230,7 @@ function main(adjmat::Matrix{Int})
     rawpathvec = trailblaze(edgelist, edgelist)
     candpathvec = copy(rawpathvec)
 
-        # build paths tracing connected edges
+        # continue path-building tracing connected edges
     while allspan(rawpathvec, graph) == false
         rawpathvec = trailblaze(rawpathvec, edgelist)
         candpathvec = vcat(candpathvec, rawpathvec)
@@ -260,9 +260,11 @@ function main(adjmat::Matrix{Int})
     end
     resultsdf = sort(resultsdf, cols = :cost, rev = true)
 
+        # display results dataframe
     println("[1] graph traversal paths and costs, \n    via tracing connected edges:\n ")
     println(resultsdf, "\n")
 
+        # call Dijkstra's mincost()
     println("[2] graph minimum cost, \n    via Dijkstra's shortest-path:\n ")
     println("\t", mincost(graph), "\n")
 end
