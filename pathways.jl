@@ -7,8 +7,15 @@
  Calculating Minimum-Energy Reaction Pathways
 =#
 
-const INFINITY = 9999   # avoid Julia's `Inf` (infinity), which is a Float
+using DataFrames
 
+    # avoid Julia's `Inf` (infinity), which is a Float
+const INFINITY = 9999
+
+
+    # weighted adjacency matrices
+    # representing graphs
+    #
 R = [0 4 5 0;
      0 0 0 4;
      0 0 0 3;
@@ -79,7 +86,7 @@ end
     # are connected
     # [Boolean]
     #
-function connected(tup1, tup2)
+function connected(tup1::NTuple, tup2::NTuple)
     tuplen = length(tup1)
 
     if tup1[tuplen] == tup2[1]
@@ -92,7 +99,8 @@ end
     # return energy cost for a single graph path
     # [Int]
     #
-function pathcost(path::Vector{Int})
+function pathcost(path::Vector{Int}, adjmat::Matrix{Int})
+    cost = adjmat
     xvec = Vector{Int}()
     yvec = Vector{Int}()
     energy = 0
@@ -117,18 +125,18 @@ end
     # [Int]
     #
 function mincost(adjmat::Matrix{Int})
-    cost = adjmat
-    nodect = size(cost)[1]
+    weight = adjmat
+    nodect = size(weight)[1]
     source = 1
     target = nodect
 
     allnodes = Set(1:nodect)
-    edges = get_edges(cost)
+    edges = get_edges(weight)
     distance = Vector{Int}(nodect)
     visited = Set{Int}([source])
     unvisited = setdiff(allnodes, visited)
 
-    distance[source] = 0
+    distance[source] = 0    # distance from source to source is zero
 
     while !isempty(unvisited)
 
@@ -138,18 +146,17 @@ function mincost(adjmat::Matrix{Int})
             for j in unvisited
                 if (i, j) in edges
                     push!(candidates, (i, j))
-                    # @show candidates
                 end
             end
         end
 
             # if candidate path cost is less than
-            # current minimum, update
+            # current minimum, update minimum
         min = INFINITY
         node = 0
         for (i, j) in candidates
-            if distance[i] + cost[i, j] < min
-                min = distance[i] + cost[i, j]
+            if distance[i] + weight[i, j] < min
+                min = distance[i] + weight[i, j]
                 node = j
             end
         end
@@ -166,29 +173,11 @@ function mincost(adjmat::Matrix{Int})
     return distance[target]
 end
 
-    # joining Julia tuples is not built-in
-    # https://discourse.julialang.org/t/efficient-tuple-concatenation/5398
+    # trace path from source to target
+    # via connected edges
+    # [Vector{Int}]
     #
-tuplejoin(x) = x
-tuplejoin(x, y) = (x..., y...)
-tuplejoin(x, y, z...) = (x..., tuplejoin(y, z...)...)
-
-
-
-
-
-
-# MAIN PROGRAM #
-
-cost = W
-edgelist = sort(collect(get_edges(cost)))
-
-source = 1
-target = size(cost)[1]
-
-
-
-function trailblaze(list1, list2)
+function trailblaze(list1::Vector, list2::Vector)
     tempvec = Vector()
     for item1 in list1
         for item2 in list2
@@ -196,15 +185,22 @@ function trailblaze(list1, list2)
                 push!(tempvec, tuplejoin(item1, item2))
             end
         end
-    end
+end
 
     return tempvec
 end
 
-function allspan(pathvec)
+    # check if all paths in a path Vector
+    # are complete (span source -> target)
+    # [Boolean]
+    #
+function allspan(pathvec::Vector{Any}, graph::Matrix{Int})
     if isempty(pathvec)
         return false
     end
+    source = 1
+    target = size(graph)[1]
+
     for path in pathvec
         if path[1] != source || path[end] != target
             return false
@@ -214,84 +210,90 @@ function allspan(pathvec)
     return true
 end
 
+    # joining Julia tuples is not built-in
+    # https://discourse.julialang.org/t/efficient-tuple-concatenation/5398
+    #
+tuplejoin(x) = x
+tuplejoin(x, y) = (x..., y...)
+tuplejoin(x, y, z...) = (x..., tuplejoin(y, z...)...)
 
-tupvec = Vector()
-for item1 in edgelist
-    for item2 in edgelist
-        if connected(item1, item2)
-            push!(tupvec, tuplejoin(item1, item2))
+
+function main(adjmat::Matrix{Int})
+    graph = adjmat
+    # graph = R
+
+    source = 1
+    target = size(graph)[1]
+    edgelist = sort(collect(get_edges(graph)))
+
+        # initial connected edge trace
+    rawpathvec = trailblaze(edgelist, edgelist)
+    candpathvec = copy(rawpathvec)
+
+        # build paths tracing connected edges
+    while allspan(rawpathvec, graph) == false
+        rawpathvec = trailblaze(rawpathvec, edgelist)
+        candpathvec = vcat(candpathvec, rawpathvec)
+    end
+
+        # filter for complete paths
+    verifypaths = Vector()
+    for item in candpathvec
+        if item[1] == source && item[end] == target
+            push!(verifypaths, item)
         end
     end
-end
 
-tupvec2 = Vector()
-for item1 in tupvec
-    for item2 in edgelist
-        if connected(item1, item2)
-            push!(tupvec2, tuplejoin(item1, item2))
-        end
+        # collect tuples into Int vectors
+        # and finalize
+    finalpaths = Vector()
+    for path in verifypaths
+        a = collect(path)
+        push!(finalpaths, a)
     end
-end
 
-tupvec3 = Vector()
-for item1 in tupvec2
-    for item2 in edgelist
-        if connected(item1, item2)
-            push!(tupvec3, tuplejoin(item1, item2))
-        end
+        # populate a results dataframe for sorting
+    resultsdf = DataFrame(cost = Int[], path = Vector{Int}[])
+    for path in finalpaths
+        tup = (pathcost(path, graph), unique(path))
+        push!(resultsdf, tup)
     end
+    resultsdf = sort(resultsdf, cols = :cost, rev = true)
+
+    println("[1] graph traversal paths and costs, \n    via tracing connected edges:\n ")
+    println(resultsdf, "\n")
+
+    println("[2] graph minimum cost, \n    via Dijkstra's shortest-path:\n ")
+    println("\t", mincost(graph), "\n")
 end
 
-candidatepaths = vcat(vcat(tupvec, tupvec2), tupvec3)
-
-
-tuplepaths = Vector()
-for item in candidatepaths
-    if item[1] == source && item[end] == target
-        push!(tuplepaths, item)
-    end
-end
-
-finalpaths = Vector()
-for path in tuplepaths
-    a = collect(path)
-    push!(finalpaths, a)
-end
-
-
-
-for path in finalpaths
-    println(unique(path), "\t", pathcost(path))
-end
-println("\nminimum cost: ", mincost(cost))
-
-
-candpathvec = trailblaze(edgelist, edgelist)
-finalpathvec = copy(candpathvec)
-display(candpathvec)
-
-while allspan(candpathvec) == false
-    candpathvec = trailblaze(candpathvec, edgelist)
-    finalpathvec = vcat(finalpathvec, candpathvec)
-end
-
-
-tuplepaths = Vector()
-for item in finalpathvec
-    if item[1] == source && item[end] == target
-        push!(tuplepaths, item)
-    end
-end
-
-finalpaths = Vector()
-for path in tuplepaths
-    a = collect(path)
-    push!(finalpaths, a)
-end
-
-
-
-for path in finalpaths
-    println(unique(path), "\t", pathcost(path))
-end
-println("\nminimum cost: ", mincost(cost))
+println("--------")
+println("GRAPH R: ")
+println("--------")
+@time main(R)
+println()
+println("--------")
+println("GRAPH S: ")
+println("--------")
+@time main(S)
+println()
+println("--------")
+println("GRAPH T: ")
+println("--------")
+@time main(T)
+println()
+println("--------")
+println("GRAPH U: ")
+println("--------")
+@time main(U)
+println()
+println("--------")
+println("GRAPH V: ")
+println("--------")
+@time main(V)
+println()
+println("--------")
+println("GRAPH W: ")
+println("--------")
+@time main(W)
+println()
