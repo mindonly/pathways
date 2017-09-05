@@ -170,6 +170,7 @@ function mincost(adjmat::Matrix{Int})
                 if (i, j) in edges
                     push!(candidates, (i, j))
                     # push!(candidates, [i, j])
+                    # @show candidates
                 end
             end
         end
@@ -195,22 +196,95 @@ function mincost(adjmat::Matrix{Int})
     return distance[target]
 end
 
-function DFS(graph::Graph, parent::Int)
-    graph.nodevec[parent].visited = true
-    # @show graph.nodevec[parent].id
-    # @show graph.nodevec[parent].children
-    for child in graph.nodevec[parent].children
-        if graph.adjmat[parent, child] > 0
-            println("linked: ", [parent, child], " ", graph.adjmat[parent, child])
-        end
-        if graph.nodevec[child].visited == false
-            DFS(graph, child)
-        end
-    end
-end
-
 tuplejoin(x) = x
 tuplejoin(x, y) = (x..., y...)
 tuplejoin(x, y, z...) = (x..., tuplejoin(y, z...)...)
 
-edgelist = sort(collect(get_edges(V)))
+cost = W
+edgelist = sort(collect(get_edges(cost)))
+
+source = 1
+target = size(cost)[1]
+
+function isconnected(tup1, tup2)
+    tuplen = length(tup1)
+    if tup1[tuplen] == tup2[1]
+        return true
+    else
+        return false
+    end
+end
+
+tupvec = Vector()
+for item1 in edgelist
+    for item2 in edgelist
+        if isconnected(item1, item2)
+            # println(tuplejoin(item1, item2))
+            push!(tupvec, tuplejoin(item1, item2))
+        end
+    end
+end
+
+tupvec2 = Vector()
+for item1 in tupvec
+    for item2 in edgelist
+        if isconnected(item1, item2)
+            # println(tuplejoin(item1, item2))
+            push!(tupvec2, tuplejoin(item1, item2))
+        end
+    end
+end
+
+tupvec3 = Vector()
+for item1 in tupvec2
+    for item2 in edgelist
+        if isconnected(item1, item2)
+            # println(tuplejoin(item1, item2))
+            push!(tupvec3, tuplejoin(item1, item2))
+        end
+    end
+end
+
+candidatepaths = vcat(vcat(tupvec, tupvec2), tupvec3)
+
+tuplepaths = Vector()
+for item in candidatepaths
+    if item[1] == source && item[end] == target
+        # println(unique(item))
+        push!(tuplepaths, item)
+    end
+end
+
+finalpaths = Vector()
+for path in tuplepaths
+    a = collect(path)
+    # @show a
+    push!(finalpaths, a)
+end
+# display(finalpaths)
+
+function pathcost(path)
+    xvec = Vector()
+    yvec = Vector()
+    energy = 0
+    for (i, elem) in enumerate(path)
+        if i % 2 == 0
+            push!(yvec, elem)
+        else
+            push!(xvec, elem)
+        end
+    end
+    for i in zip(xvec, yvec)
+        e = collect(i)
+        # @show e
+        # @show cost[e[1], e[2]]
+        energy += cost[e[1], e[2]]
+    end
+
+    return energy
+end
+
+for path in finalpaths
+    println(unique(path), "\t", pathcost(path))
+end
+println("\nminimum cost: ", mincost(cost))
