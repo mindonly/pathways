@@ -56,16 +56,18 @@ W = [0 2 2 2 2 2  0 0  0  0  0  0  0 0;
      0 0 0 0 0 0  0 0  0  0  0  0  0 0;]
 
 
+     # return tuple Set representing graph
+     # edges (adjacency matrix)
+     # [Set{Tuple{Int, Int}}]
+     #
 function get_edges(mat::Matrix{Int})
     dimlen = size(mat)[1]
     edgeset = Set{Tuple{Int, Int}}()
-    # edgeset = Set{Vector{Int}}()
 
     for i = 1:dimlen
         for j = 1:dimlen
             if mat[i, j] != 0
                 push!(edgeset, (i, j))
-                # push!(edgeset, [i, j])
             end
         end
     end
@@ -73,8 +75,13 @@ function get_edges(mat::Matrix{Int})
     return edgeset
 end
 
-function isconnected(tup1, tup2)
+    # check if two graph edges (tuples)
+    # are connected
+    # [Boolean]
+    #
+function connected(tup1, tup2)
     tuplen = length(tup1)
+
     if tup1[tuplen] == tup2[1]
         return true
     else
@@ -82,6 +89,9 @@ function isconnected(tup1, tup2)
     end
 end
 
+    # return energy cost for a single graph path
+    # [Int]
+    #
 function pathcost(path::Vector{Int})
     xvec = Vector{Int}()
     yvec = Vector{Int}()
@@ -95,14 +105,17 @@ function pathcost(path::Vector{Int})
     end
     for i in zip(xvec, yvec)
         e = collect(i)
-        # @show e
-        # @show cost[e[1], e[2]]
         energy += cost[e[1], e[2]]
     end
 
     return energy
 end
 
+    # use Dijkstra's shortest-path algorithm to compute
+    # the minimum energy cost for a graph (adjacency matrix)
+    # https://en.wikipedia.org/wiki/Dijkstra's_algorithm
+    # [Int]
+    #
 function mincost(adjmat::Matrix{Int})
     cost = adjmat
     nodect = size(cost)[1]
@@ -118,20 +131,20 @@ function mincost(adjmat::Matrix{Int})
     distance[source] = 0
 
     while !isempty(unvisited)
-        # Step 1
+
+            # build Set of candidate paths
         candidates = Set{Tuple{Int, Int}}()
-        # candidates = Set{Vector{Int}}()
         for i in visited
             for j in unvisited
                 if (i, j) in edges
                     push!(candidates, (i, j))
-                    # push!(candidates, [i, j])
                     # @show candidates
                 end
             end
         end
 
-        # Step 2
+            # if candidate path cost is less than
+            # current minimum, update
         min = INFINITY
         node = 0
         for (i, j) in candidates
@@ -141,17 +154,21 @@ function mincost(adjmat::Matrix{Int})
             end
         end
 
-        # Step 3
+            # update distance
+            # to node from source
         distance[node] = min
         push!(visited, node)
 
-        # Step 4
+            # update unvisited set by set difference
         unvisited = setdiff(allnodes, visited)
     end
 
     return distance[target]
 end
 
+    # joining Julia tuples is not built-in
+    # https://discourse.julialang.org/t/efficient-tuple-concatenation/5398
+    #
 tuplejoin(x) = x
 tuplejoin(x, y) = (x..., y...)
 tuplejoin(x, y, z...) = (x..., tuplejoin(y, z...)...)
@@ -171,11 +188,17 @@ target = size(cost)[1]
 
 
 
+
+
+
+
+
+
+
 tupvec = Vector()
 for item1 in edgelist
     for item2 in edgelist
-        if isconnected(item1, item2)
-            # println(tuplejoin(item1, item2))
+        if connected(item1, item2)
             push!(tupvec, tuplejoin(item1, item2))
         end
     end
@@ -184,8 +207,7 @@ end
 tupvec2 = Vector()
 for item1 in tupvec
     for item2 in edgelist
-        if isconnected(item1, item2)
-            # println(tuplejoin(item1, item2))
+        if connected(item1, item2)
             push!(tupvec2, tuplejoin(item1, item2))
         end
     end
@@ -194,8 +216,7 @@ end
 tupvec3 = Vector()
 for item1 in tupvec2
     for item2 in edgelist
-        if isconnected(item1, item2)
-            # println(tuplejoin(item1, item2))
+        if connected(item1, item2)
             push!(tupvec3, tuplejoin(item1, item2))
         end
     end
@@ -203,10 +224,17 @@ end
 
 candidatepaths = vcat(vcat(tupvec, tupvec2), tupvec3)
 
+
+
+
+
+
+
+
+
 tuplepaths = Vector()
 for item in candidatepaths
     if item[1] == source && item[end] == target
-        # println(unique(item))
         push!(tuplepaths, item)
     end
 end
@@ -214,10 +242,8 @@ end
 finalpaths = Vector()
 for path in tuplepaths
     a = collect(path)
-    # @show a
     push!(finalpaths, a)
 end
-# display(finalpaths)
 
 
 
