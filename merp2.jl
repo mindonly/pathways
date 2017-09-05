@@ -7,7 +7,7 @@
  Calculating Minimum-Energy Reaction Pathways
 =#
 
-const INFINITY = 9999
+const INFINITY = 9999   # avoid Julia's Inf, which is a Float
 
 mutable struct Node
     id::Int
@@ -70,6 +70,12 @@ S = [0 4  0  0;
      0 0  0  3;
      0 0  0  0;]
 
+T = [0 6 0 0  0;
+     0 0 2 8 10;
+     0 0 0 0 10;
+     0 0 0 0  3;
+     0 0 0 0  0;]
+
 U = [0 10 0  0  0  0;
      0  0 8 13 24 51;
      0  0 0 14  0  0;
@@ -115,17 +121,7 @@ function get_weight(g::Graph, idx1::Int, idx2::Int)
     x = g.nodevec[idx1].id
     y = g.nodevec[idx2].id
 
-    wt = get_weight(mat, x, y)
-
-    if wt == 0
-        if x == y
-            return 0
-        else
-            return INFINITY
-        end
-    else
-        return wt
-    end
+    return get_weight(mat, x, y)
 end
 get_weight(mat::Matrix{Int}, x::Int, y::Int) = return mat[x, y]
 
@@ -134,47 +130,87 @@ function idxToNode(g::Graph, idx::Int)
     return g.nodevec[idx]
 end
 
+function get_edges(mat::Matrix{Int})
+    dimlen = size(mat)[1]
+    edgeset = Set{Tuple{Int, Int}}()
+    # edgeset = Set{Vector{Int}}()
 
-cost = S
-graph = Graph(cost)
-n = size(cost)[1]
-source = 1
-target = n
-
-dist = Vector{Int}(n)
-prev = Vector{Node}(n)
-
-for node in get_nodes(graph)
-    @show node.id
-    @show get_children(node)
-    dist[node.id] = get_weight(graph, source, node.id)
-    @show source, node.id get_weight(graph, source, node.id)
-end
-
-visited = falses(1, n)
-visited[source] = true
-
-v = 0
-for i in 2:n
-    min = INFINITY
-    @show min
-    for w in 2:n
-        if visited[w] == false
-            if dist[w] < min
-                v = w
-                min = dist[w]
+    for i = 1:dimlen
+        for j = 1:dimlen
+            if mat[i, j] != 0
+                push!(edgeset, (i, j))
+                # push!(edgeset, [i, j])
             end
         end
     end
-    visited[v] = true
-    @show v
-    for w in 2:n
-        if visited[w] == false
-            if (min + cost[v, w]) < dist[w]
-                dist[w] = min + cost[v, w]
+
+    return edgeset
+end
+
+function mincost(adjmat::Matrix{Int})
+    cost = adjmat
+    nodect = size(cost)[1]
+    source = 1
+    target = nodect
+
+    allnodes = Set(1:nodect)
+    edges = get_edges(cost)
+    distance = Vector{Int}(nodect)
+    visited = Set{Int}([source])
+    unvisited = setdiff(allnodes, visited)
+
+    distance[source] = 0
+
+    while !isempty(unvisited)
+        # Step 1
+        candidates = Set{Tuple{Int, Int}}()
+        # candidates = Set{Vector{Int}}()
+        for i in visited
+            for j in unvisited
+                if (i, j) in edges
+                    push!(candidates, (i, j))
+                    # push!(candidates, [i, j])
+                end
             end
+        end
+
+        # Step 2
+        min = INFINITY
+        node = 0
+        for (i, j) in candidates
+            if distance[i] + cost[i, j] < min
+                min = distance[i] + cost[i, j]
+                node = j
+            end
+        end
+
+        # Step 3
+        distance[node] = min
+        push!(visited, node)
+
+        # Step 4
+        unvisited = setdiff(allnodes, visited)
+    end
+
+    return distance[target]
+end
+
+function DFS(graph::Graph, parent::Int)
+    graph.nodevec[parent].visited = true
+    # @show graph.nodevec[parent].id
+    # @show graph.nodevec[parent].children
+    for child in graph.nodevec[parent].children
+        if graph.adjmat[parent, child] > 0
+            println("linked: ", [parent, child], " ", graph.adjmat[parent, child])
+        end
+        if graph.nodevec[child].visited == false
+            DFS(graph, child)
         end
     end
 end
 
-println("minimum cost: ", dist[target])
+tuplejoin(x) = x
+tuplejoin(x, y) = (x..., y...)
+tuplejoin(x, y, z...) = (x..., tuplejoin(y, z...)...)
+
+edgelist = sort(collect(get_edges(V)))
