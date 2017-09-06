@@ -272,7 +272,7 @@ function dijkstra_wrapper(adjmat::Matrix{Int})
     graph = adjmat
 
         # call Dijkstra's mincost()
-    println("\n[2] graph minimum cost, \n    Dijkstra's shortest-path:\n ")
+    println("\n[2] graph minimum cost, \n    Dijkstra's algorithm:\n ")
     println("\t", mincost(graph), "\n")
 end
 
