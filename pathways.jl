@@ -12,7 +12,6 @@ using DataFrames
     # avoid Julia's `Inf` (infinity), which is a Float
 const INFINITY = 9999
 
-
     # weighted adjacency matrices
     # representing graphs
     #
@@ -218,9 +217,11 @@ tuplejoin(x, y) = (x..., y...)
 tuplejoin(x, y, z...) = (x..., tuplejoin(y, z...)...)
 
 
-function main(adjmat::Matrix{Int})
+    # brute-force connected edge trace,
+    # populate results dataframe and display
+    #
+function edgetrace(adjmat::Matrix{Int})
     graph = adjmat
-    # graph = R
 
     source = 1
     target = size(graph)[1]
@@ -231,7 +232,7 @@ function main(adjmat::Matrix{Int})
     candpathvec = copy(rawpathvec)
 
         # continue path-building tracing connected edges
-    while allspan(rawpathvec, graph) == false
+    while !allspan(rawpathvec, graph)
         rawpathvec = trailblaze(rawpathvec, edgelist)
         candpathvec = vcat(candpathvec, rawpathvec)
     end
@@ -261,41 +262,49 @@ function main(adjmat::Matrix{Int})
     resultsdf = sort(resultsdf, cols = :cost, rev = true)
 
         # display results dataframe
-    println("[1] graph traversal paths and costs, \n    via tracing connected edges:\n ")
+    println("[1] graph traversal paths and costs, \n    brute force connected edge tracing:\n ")
     println(resultsdf, "\n")
+end
+
+    # display wrapper for mincost()
+    #
+function dijkstra_wrapper(adjmat::Matrix{Int})
+    graph = adjmat
 
         # call Dijkstra's mincost()
-    println("[2] graph minimum cost, \n    via Dijkstra's shortest-path:\n ")
+    println("\n[2] graph minimum cost, \n    Dijkstra's shortest-path:\n ")
     println("\t", mincost(graph), "\n")
 end
 
-println("--------")
-println("GRAPH R: ")
-println("--------")
-@time main(R)
-println()
-println("--------")
-println("GRAPH S: ")
-println("--------")
-@time main(S)
-println()
-println("--------")
-println("GRAPH T: ")
-println("--------")
-@time main(T)
-println()
-println("--------")
-println("GRAPH U: ")
-println("--------")
-@time main(U)
-println()
-println("--------")
-println("GRAPH V: ")
-println("--------")
-@time main(V)
-println()
-println("--------")
-println("GRAPH W: ")
-println("--------")
-@time main(W)
-println()
+
+    # main program
+    #
+function main()
+    println("----------\n GRAPH R: \n----------")
+    @time edgetrace(R)
+    @time dijkstra_wrapper(R)
+    println()
+    println("----------\n GRAPH S: \n----------")
+    @time edgetrace(S)
+    @time dijkstra_wrapper(S)
+    println()
+    println("----------\n GRAPH T: \n----------")
+    @time edgetrace(T)
+    @time dijkstra_wrapper(T)
+    println()
+    println("----------\n GRAPH U: \n----------")
+    @time edgetrace(U)
+    @time dijkstra_wrapper(U)
+    println()
+    println("----------\n GRAPH V: \n----------")
+    @time edgetrace(V)
+    @time dijkstra_wrapper(V)
+    println()
+    println("----------\n GRAPH W: \n----------")
+    @time edgetrace(W)
+    @time dijkstra_wrapper(W)
+
+    println("\ntotal runtime: ")
+end
+
+@time main()
