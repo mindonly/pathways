@@ -103,6 +103,7 @@ function pathcost(path::Vector{Int}, adjmat::Matrix{Int})
     xvec = Vector{Int}()
     yvec = Vector{Int}()
     energy = 0
+
     for (i, elem) in enumerate(path)
         if i % 2 == 0
             push!(yvec, elem)
@@ -150,7 +151,7 @@ function mincost(adjmat::Matrix{Int})
         end
 
             # if candidate path cost is less than
-            # current minimum, update minimum
+            # current minimum, update minimum; track node
         min = INFINITY
         node = 0
         for (i, j) in candidates
@@ -172,11 +173,10 @@ function mincost(adjmat::Matrix{Int})
     return distance[target]
 end
 
-    # trace path from source to target
-    # via connected edges
+    # link connected edges from two edge lists
     # [Vector{Int}]
     #
-function trailblaze(list1::Vector, list2::Vector)
+function link(list1::Vector, list2::Vector)
     tempvec = Vector()
     for item1 in list1
         for item2 in list2
@@ -189,8 +189,8 @@ end
     return tempvec
 end
 
-    # check if all paths in a path Vector
-    # are complete (span source -> target)
+    # check if all paths in a path vector
+    # span the graph (from source -> target)
     # [Boolean]
     #
 function allspan(pathvec::Vector{Any}, graph::Matrix{Int})
@@ -209,7 +209,7 @@ function allspan(pathvec::Vector{Any}, graph::Matrix{Int})
     return true
 end
 
-    # joining Julia tuples is not built-in
+    # joining tuples in Julia is not built-in
     # https://discourse.julialang.org/t/efficient-tuple-concatenation/5398
     #
 tuplejoin(x) = x
@@ -228,12 +228,12 @@ function edgetrace(adjmat::Matrix{Int})
     edgelist = sort(collect(get_edges(graph)))
 
         # initial connected edge trace
-    rawpathvec = trailblaze(edgelist, edgelist)
+    rawpathvec = link(edgelist, edgelist)
     candpathvec = copy(rawpathvec)
 
         # continue path-building tracing connected edges
     while !allspan(rawpathvec, graph)
-        rawpathvec = trailblaze(rawpathvec, edgelist)
+        rawpathvec = link(rawpathvec, edgelist)
         candpathvec = vcat(candpathvec, rawpathvec)
     end
 
