@@ -119,12 +119,12 @@ function pathcost(path::Vector{Int}, adjmat::Matrix{Int})
     return energy
 end
 
-    # use Dijkstra's shortest-path algorithm to compute
+    # use Dijkstra's shortest-path algorithm; compute and return
     # the minimum energy cost for a graph (adjacency matrix)
     # https://en.wikipedia.org/wiki/Dijkstra's_algorithm
     # [Int]
     #
-function mincost(adjmat::Matrix{Int})
+function dijkstra(adjmat::Matrix{Int})
     weight = adjmat
     nodect = size(weight)[1]
     source = 1
@@ -184,7 +184,7 @@ function link(list1::Vector, list2::Vector)
                 push!(tempvec, tuplejoin(item1, item2))
             end
         end
-end
+    end
 
     return tempvec
 end
@@ -217,8 +217,8 @@ tuplejoin(x, y) = (x..., y...)
 tuplejoin(x, y, z...) = (x..., tuplejoin(y, z...)...)
 
 
-    # brute-force connected edge trace,
-    # populate results dataframe and display
+    # brute-force connected edge trace
+    # [Matrix{Int}]
     #
 function edgetrace(adjmat::Matrix{Int})
     graph = adjmat
@@ -245,35 +245,45 @@ function edgetrace(adjmat::Matrix{Int})
         end
     end
 
-        # collect tuples into Int vectors
-        # and finalize
+        # collect tuples into Int vectors and finalize
     finalpaths = Vector()
     for path in verifypaths
         a = collect(path)
         push!(finalpaths, a)
     end
 
-        # populate a results dataframe for sorting
+    return finalpaths
+end
+
+    # display wrapper for edgetrace()
+    #
+function edgetrace_wrapper(adjmat::Matrix{Int})
+    println("[1] graph traversal paths and costs,\n    brute force connected edge tracing:\n")
+
+    graph = adjmat
+    @time pathv = edgetrace(graph)
+    println()
+
+    # populate a results dataframe for sorting
     resultsdf = DataFrame(cost = Int[], path = Vector{Int}[])
-    for path in finalpaths
+    for path in pathv
         tup = (pathcost(path, graph), unique(path))
         push!(resultsdf, tup)
     end
     resultsdf = sort(resultsdf, cols = :cost, rev = true)
 
         # display results dataframe
-    println("[1] graph traversal paths and costs, \n    brute force connected edge tracing:\n ")
-    println(resultsdf, "\n")
+    println(resultsdf)
 end
 
-    # display wrapper for mincost()
+    # display wrapper for dijkstra()
     #
 function dijkstra_wrapper(adjmat::Matrix{Int})
     graph = adjmat
 
-        # call Dijkstra's mincost()
+        # call dijkstra()
     println("\n[2] graph minimum cost, \n    Dijkstra's algorithm:\n ")
-    println("\t", mincost(graph), "\n")
+    @time println("\t", dijkstra(graph), "\n")
 end
 
 
@@ -281,30 +291,35 @@ end
     #
 function main()
     println("----------\n GRAPH R: \n----------")
-    @time edgetrace(R)
-    @time dijkstra_wrapper(R)
+    edgetrace_wrapper(R)
+    dijkstra_wrapper(R)
     println()
-    println("----------\n GRAPH S: \n----------")
-    @time edgetrace(S)
-    @time dijkstra_wrapper(S)
-    println()
-    println("----------\n GRAPH T: \n----------")
-    @time edgetrace(T)
-    @time dijkstra_wrapper(T)
-    println()
-    println("----------\n GRAPH U: \n----------")
-    @time edgetrace(U)
-    @time dijkstra_wrapper(U)
-    println()
-    println("----------\n GRAPH V: \n----------")
-    @time edgetrace(V)
-    @time dijkstra_wrapper(V)
-    println()
-    println("----------\n GRAPH W: \n----------")
-    @time edgetrace(W)
-    @time dijkstra_wrapper(W)
 
-    println("\ntotal runtime: ")
+    println("----------\n GRAPH S: \n----------")
+    edgetrace_wrapper(S)
+    dijkstra_wrapper(S)
+    println()
+
+    println("----------\n GRAPH T: \n----------")
+    edgetrace_wrapper(T)
+    dijkstra_wrapper(T)
+    println()
+
+    println("----------\n GRAPH U: \n----------")
+    edgetrace_wrapper(U)
+    dijkstra_wrapper(U)
+    println()
+
+    println("----------\n GRAPH V: \n----------")
+    edgetrace_wrapper(V)
+    dijkstra_wrapper(V)
+    println()
+
+    println("----------\n GRAPH W: \n----------")
+    edgetrace_wrapper(W)
+    dijkstra_wrapper(W)
+
+    println("\n----------------\n total runtime: \n----------------")
 end
 
 @time main()
