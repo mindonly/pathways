@@ -7,7 +7,7 @@
  Calculating Minimum-Energy Reaction Pathways
 =#
 
-using DataFrames
+using DataStructures, DataFrames
 
     # avoid Julia's `Inf` (infinity), which is a Float
 const INFINITY = 9999
@@ -60,6 +60,27 @@ W = [0 2 2 2 2 2  0 0  0  0  0  0  0 0;
      0 0 0 0 0 0  0 0  0  0  0  0  0 5;
      0 0 0 0 0 0  0 0  0  0  0  0  0 5;
      0 0 0 0 0 0  0 0  0  0  0  0  0 0;]
+
+X = [0 3 2 1 0 0 5 0 0 0 0 0 0 0 0 0 0 0 0  0;
+     0 0 0 0 2 7 0 0 0 0 0 0 0 0 0 0 0 0 0  0;
+     0 0 0 0 0 6 0 0 0 0 0 0 0 0 0 0 0 0 0  0;
+     0 0 0 0 0	1 0 0 0 0 0 0 0 0 0 0 0 0 0  0;
+     0 0 0 0 0 0 0 2 0 0 3 0 0 0 0 0 0 0 0  0;
+     0 0 0 0 0 0 3 2 2 0 0 5 0 0 0 0 0 0 0  0;
+     0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0  0;
+     0 0 0 0 0 0 0 0 0 0 1 2 0 0 0 0 0 0 0  0;
+     0 0 0 0 0 0 0 0 0 0 0 0 3 0 0 0 0 0 0  0;
+     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 3 0 0 8  0;
+     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 6 0 0  0;
+     0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 0 0 0 0  0;
+     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0  0;
+     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  0;
+     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 2 0 10;
+     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 3 10;
+     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  7;
+     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  5;
+     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  7;
+     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  0;]
 
 
      # return tuple Set representing graph
@@ -124,7 +145,7 @@ end
     # https://en.wikipedia.org/wiki/Dijkstra's_algorithm
     # [Int]
     #
-function dijkstra(adjmat::Matrix{Int})
+function dijkstra_old(adjmat::Matrix{Int})
     weight = adjmat
     nodect = size(weight)[1]
     source = 1
@@ -161,8 +182,8 @@ function dijkstra(adjmat::Matrix{Int})
             end
         end
 
-            # update distance
-            # to node from source
+            # update distance to node from source
+            # update visited Set
         distance[node] = min
         push!(visited, node)
 
@@ -255,10 +276,78 @@ function edgetrace(adjmat::Matrix{Int})
     return finalpaths
 end
 
+    # use Dijkstra's algorithm to find
+    # graph's optimal path and minimum cost
+    # https://en.wikipedia.org/wiki/Dijkstra's_algorithm
+    #
+function dijkstra(adjmat::Matrix{Int})
+    weight = adjmat
+    nodect = size(weight)[1]
+    source = 1
+    target = nodect
+
+    allnodes = Set(1:nodect)
+    edges = get_edges(weight)
+    distance = Vector{Int}(nodect)
+    previous = Vector{Int}(nodect)
+    visited = Set{Int}([source])
+    unvisited = setdiff(allnodes, visited)
+
+    distance[source] = 0    # distance from source to source is zero
+
+    while !isempty(unvisited)
+
+            # build Set of candidate paths
+        candidates = Set{Tuple{Int, Int}}()
+        for i in visited
+            for j in unvisited
+                if (i, j) in edges
+                    push!(candidates, (i, j))
+                end
+            end
+        end
+
+            # if candidate path cost is less than
+            # current minimum, update minimum; track node & prev
+        min = INFINITY
+        node = 0
+        prev = 0
+        for (i, j) in candidates
+            if distance[i] + weight[i, j] < min
+                min = distance[i] + weight[i, j]
+                node = j
+                prev = i
+            end
+        end
+
+            # update distance to node from source
+            # assign previous node
+            # update visited Set
+        distance[node] = min
+        previous[node] = prev
+        push!(visited, node)
+
+            # update unvisited set by set difference
+        unvisited = setdiff(allnodes, visited)
+    end
+
+        # reverse-iterate optimal path
+    optpath = Vector{Int}()
+    push!(optpath, target)
+    v = target
+    while previous[v] != source
+        push!(optpath, previous[v])
+        v = previous[v]
+    end
+    push!(optpath, source)
+
+    return distance[target], reverse(optpath)
+end
+
     # display wrapper for edgetrace()
     #
 function edgetrace_wrapper(adjmat::Matrix{Int})
-    println("[1] graph traversal paths and costs,\n    brute force connected edge tracing:\n")
+    println("[1] graph traversal costs and paths,\n    brute force connected edge tracing:\n")
 
     graph = adjmat
     @time pathv = edgetrace(graph)
@@ -282,7 +371,7 @@ function dijkstra_wrapper(adjmat::Matrix{Int})
     graph = adjmat
 
         # call dijkstra()
-    println("\n[2] graph minimum cost, \n    Dijkstra's algorithm:\n ")
+    println("\n[2] graph minimum cost and optimal path, \n    Dijkstra's algorithm:\n ")
     @time println("\t", dijkstra(graph), "\n")
 end
 
@@ -318,6 +407,10 @@ function main()
     println("----------\n GRAPH W: \n----------")
     edgetrace_wrapper(W)
     dijkstra_wrapper(W)
+
+    println("----------\n GRAPH X: \n----------")
+    edgetrace_wrapper(X)
+    dijkstra_wrapper(X)
 
     println("\n----------------\n total runtime: \n----------------")
 end
