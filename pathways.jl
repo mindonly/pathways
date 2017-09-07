@@ -7,7 +7,7 @@
  Calculating Minimum-Energy Reaction Pathways
 =#
 
-using DataStructures, DataFrames
+using DataFrames
 
     # avoid Julia's `Inf` (infinity), which is a Float
 const INFINITY = 9999
@@ -15,30 +15,30 @@ const INFINITY = 9999
     # weighted adjacency matrices
     # representing graphs
     #
-R = [0 4 5 0;
+A = [0 4 5 0;
      0 0 0 4;
      0 0 0 3;
      0 0 0 0;]
 
-S = [0 4  0  0;
+B = [0 4  0  0;
      0 0 10 15;
      0 0  0  3;
      0 0  0  0;]
 
-T = [0 6 0 0  0;
+C = [0 6 0 0  0;
      0 0 2 8 10;
      0 0 0 0 10;
      0 0 0 0  3;
      0 0 0 0  0;]
 
-U = [0 10 0  0  0  0;
+D = [0 10 0  0  0  0;
      0  0 8 13 24 51;
      0  0 0 14  0  0;
      0  0 0  0  9  0;
      0  0 0  0  0 17;
      0  0 0  0  0  0;]
 
-V = [0 15 14 9  0  0  0;
+E = [0 15 14 9  0  0  0;
      0	0  0 0  0 20 37;
      0	5  0 0 17 30  0;
      0	0  0 0 23  0  0;
@@ -46,7 +46,7 @@ V = [0 15 14 9  0  0  0;
      0	0  0 0  0  0 16;
      0	0  0 0  0  0  0;]
 
-W = [0 2 2 2 2 2  0 0  0  0  0  0  0 0;
+F = [0 2 2 2 2 2  0 0  0  0  0  0  0 0;
      0 0 0 0 0 0 10 0  0  0  0  0  0 0;
      0 0 0 0 0 0 12 5  0  0  0  0  0 0;
      0 0 0 0 0 0  0 8 14  0  0  0  0 0;
@@ -61,10 +61,10 @@ W = [0 2 2 2 2 2  0 0  0  0  0  0  0 0;
      0 0 0 0 0 0  0 0  0  0  0  0  0 5;
      0 0 0 0 0 0  0 0  0  0  0  0  0 0;]
 
-X = [0 3 2 1 0 0 5 0 0 0 0 0 0 0 0 0 0 0 0  0;
+G = [0 3 2 1 0 0 5 0 0 0 0 0 0 0 0 0 0 0 0  0;
      0 0 0 0 2 7 0 0 0 0 0 0 0 0 0 0 0 0 0  0;
      0 0 0 0 0 6 0 0 0 0 0 0 0 0 0 0 0 0 0  0;
-     0 0 0 0 0	1 0 0 0 0 0 0 0 0 0 0 0 0 0  0;
+     0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0  0;
      0 0 0 0 0 0 0 2 0 0 3 0 0 0 0 0 0 0 0  0;
      0 0 0 0 0 0 3 2 2 0 0 5 0 0 0 0 0 0 0  0;
      0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0  0;
@@ -138,60 +138,6 @@ function pathcost(path::Vector{Int}, adjmat::Matrix{Int})
     end
 
     return energy
-end
-
-    # use Dijkstra's shortest-path algorithm; compute and return
-    # the minimum energy cost for a graph (adjacency matrix)
-    # https://en.wikipedia.org/wiki/Dijkstra's_algorithm
-    # [Int]
-    #
-function dijkstra_old(adjmat::Matrix{Int})
-    weight = adjmat
-    nodect = size(weight)[1]
-    source = 1
-    target = nodect
-
-    allnodes = Set(1:nodect)
-    edges = get_edges(weight)
-    distance = Vector{Int}(nodect)
-    visited = Set{Int}([source])
-    unvisited = setdiff(allnodes, visited)
-
-    distance[source] = 0    # distance from source to source is zero
-
-    while !isempty(unvisited)
-
-            # build Set of candidate paths
-        candidates = Set{Tuple{Int, Int}}()
-        for i in visited
-            for j in unvisited
-                if (i, j) in edges
-                    push!(candidates, (i, j))
-                end
-            end
-        end
-
-            # if candidate path cost is less than
-            # current minimum, update minimum; track node
-        min = INFINITY
-        node = 0
-        for (i, j) in candidates
-            if distance[i] + weight[i, j] < min
-                min = distance[i] + weight[i, j]
-                node = j
-            end
-        end
-
-            # update distance to node from source
-            # update visited Set
-        distance[node] = min
-        push!(visited, node)
-
-            # update unvisited set by set difference
-        unvisited = setdiff(allnodes, visited)
-    end
-
-    return distance[target]
 end
 
     # link connected edges from two edge lists
@@ -279,6 +225,7 @@ end
     # use Dijkstra's algorithm to find
     # graph's optimal path and minimum cost
     # https://en.wikipedia.org/wiki/Dijkstra's_algorithm
+    # [Tuple{Int, Vector{Int}}]
     #
 function dijkstra(adjmat::Matrix{Int})
     weight = adjmat
@@ -341,7 +288,7 @@ function dijkstra(adjmat::Matrix{Int})
     end
     push!(optpath, source)
 
-    return distance[target], reverse(optpath)
+    return (distance[target], reverse(optpath))
 end
 
     # display wrapper for edgetrace()
@@ -379,38 +326,14 @@ end
     # main program
     #
 function main()
-    println("----------\n GRAPH R: \n----------")
-    edgetrace_wrapper(R)
-    dijkstra_wrapper(R)
-    println()
 
-    println("----------\n GRAPH S: \n----------")
-    edgetrace_wrapper(S)
-    dijkstra_wrapper(S)
-    println()
-
-    println("----------\n GRAPH T: \n----------")
-    edgetrace_wrapper(T)
-    dijkstra_wrapper(T)
-    println()
-
-    println("----------\n GRAPH U: \n----------")
-    edgetrace_wrapper(U)
-    dijkstra_wrapper(U)
-    println()
-
-    println("----------\n GRAPH V: \n----------")
-    edgetrace_wrapper(V)
-    dijkstra_wrapper(V)
-    println()
-
-    println("----------\n GRAPH W: \n----------")
-    edgetrace_wrapper(W)
-    dijkstra_wrapper(W)
-
-    println("----------\n GRAPH X: \n----------")
-    edgetrace_wrapper(X)
-    dijkstra_wrapper(X)
+        # call edgetrace() and dijkstra() on each graph
+    for (i, graph) in enumerate([A, B, C, D, E, F, G])
+        println("----------\n GRAPH $i: \n----------")
+        edgetrace_wrapper(graph)
+        dijkstra_wrapper(graph)
+        println()
+    end
 
     println("\n----------------\n total runtime: \n----------------")
 end
