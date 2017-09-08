@@ -156,6 +156,13 @@ function link(list1::Vector, list2::Vector)
     return tempvec
 end
 
+    # joining tuples in Julia is not built-in
+    # https://discourse.julialang.org/t/efficient-tuple-concatenation/5398
+    #
+tuplejoin(x) = x
+tuplejoin(x, y) = (x..., y...)
+tuplejoin(x, y, z...) = (x..., tuplejoin(y, z...)...)
+
     # check if all paths in a path vector
     # span the graph (from source -> target)
     # [Boolean]
@@ -175,13 +182,6 @@ function allspan(pathvec::Vector{Any}, graph::Matrix{Int})
 
     return true
 end
-
-    # joining tuples in Julia is not built-in
-    # https://discourse.julialang.org/t/efficient-tuple-concatenation/5398
-    #
-tuplejoin(x) = x
-tuplejoin(x, y) = (x..., y...)
-tuplejoin(x, y, z...) = (x..., tuplejoin(y, z...)...)
 
 
     # brute-force connected edge trace
@@ -244,22 +244,22 @@ function dijkstra(adjmat::Matrix{Int})
 
     while !isempty(unvisited)
 
-            # build Set of candidate paths
-        candidates = Set{Tuple{Int, Int}}()
+            # build Set of neighbor paths
+        neighbors = Set{Tuple{Int, Int}}()
         for i in visited
             for j in unvisited
                 if (i, j) in edges
-                    push!(candidates, (i, j))
+                    push!(neighbors, (i, j))
                 end
             end
         end
 
-            # if candidate path cost is less than
+            # if neighbor path cost is less than
             # current minimum, update minimum; track node & prev
         min = INFINITY
         node = 0
         prev = 0
-        for (i, j) in candidates
+        for (i, j) in neighbors
             if distance[i] + weight[i, j] < min
                 min = distance[i] + weight[i, j]
                 node = j
