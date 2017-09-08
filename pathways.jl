@@ -12,8 +12,7 @@ using DataFrames
     # avoid Julia's `Inf` (infinity), which is a Float
 const INFINITY = 9999
 
-    # weighted adjacency matrices
-    # representing graphs
+    # weighted adjacency matrices representing graphs
     #
 A = [0 4 5 0;
      0 0 0 4;
@@ -83,8 +82,7 @@ G = [0 3 2 1 0 0 5 0 0 0 0 0 0 0 0 0 0 0 0  0;
      0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  0;]
 
 
-     # return tuple Set representing graph
-     # edges (adjacency matrix)
+     # return tuple Set representing graph edges
      # [Set{Tuple{Int, Int}}]
      #
 function get_edges(mat::Matrix{Int})
@@ -102,8 +100,7 @@ function get_edges(mat::Matrix{Int})
     return edgeset
 end
 
-    # check if two graph edges (tuples)
-    # are connected
+    # check if two graph edges (tuples) are connected
     # [Boolean]
     #
 function connected(tup1::NTuple, tup2::NTuple)
@@ -163,8 +160,8 @@ tuplejoin(x) = x
 tuplejoin(x, y) = (x..., y...)
 tuplejoin(x, y, z...) = (x..., tuplejoin(y, z...)...)
 
-    # check if all paths in a path vector
-    # span the graph (from source -> target)
+    # check if all paths in a path vector span the graph
+    # (source -> target)
     # [Boolean]
     #
 function allspan(pathvec::Vector{Any}, graph::Matrix{Int})
@@ -184,7 +181,7 @@ function allspan(pathvec::Vector{Any}, graph::Matrix{Int})
 end
 
 
-    # brute-force connected edge trace
+    # brute-force connected edge link & trace
     # [Matrix{Int}]
     #
 function edgetrace(adjmat::Matrix{Int})
@@ -222,8 +219,7 @@ function edgetrace(adjmat::Matrix{Int})
     return finalpaths
 end
 
-    # use Dijkstra's algorithm to find
-    # graph's optimal path and minimum cost
+    # Dijkstra's algorithm; find shortest path and minimum cost
     # https://en.wikipedia.org/wiki/Dijkstra's_algorithm
     # [Tuple{Int, Vector{Int}}]
     #
@@ -254,8 +250,8 @@ function dijkstra(adjmat::Matrix{Int})
             end
         end
 
-            # if neighbor path cost is less than
-            # current minimum, update minimum; track node & prev
+            # if neighbor path cost is less than current
+            # minimum, update minimum; track node & prev
         min = INFINITY
         node = 0
         prev = 0
@@ -268,27 +264,27 @@ function dijkstra(adjmat::Matrix{Int})
         end
 
             # update distance to node from source
-            # assign previous node
+            # track previous node
             # update visited Set
         distance[node] = min
         previous[node] = prev
         push!(visited, node)
 
-            # update unvisited set by set difference
+            # update unvisited Set by set difference
         unvisited = setdiff(allnodes, visited)
     end
 
-        # reverse-iterate optimal path
-    optpath = Vector{Int}()
-    push!(optpath, target)
+        # reverse-iterate shortest path
+    shortpath = Vector{Int}()
+    push!(shortpath, target)
     v = target
     while previous[v] != source
-        push!(optpath, previous[v])
+        push!(shortpath, previous[v])
         v = previous[v]
     end
-    push!(optpath, source)
+    push!(shortpath, source)
 
-    return (distance[target], reverse(optpath))
+    return (distance[target], reverse(shortpath))
 end
 
     # display wrapper for edgetrace()
