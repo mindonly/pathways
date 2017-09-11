@@ -1,0 +1,31 @@
+@startuml
+skinparam monochrome true
+left to right direction
+
+'title Graph 3\nmin. cost = 17
+
+(S1)    #Grey
+(S1) ..> (S2) : 15
+(S1) ==> (S3) : 14
+(S1) ..> (S4) : 9
+
+(S2) ..> (S6) : 20
+(S2) ..> (S7) : 37
+
+(S3)    #Grey
+(S3) ..> (S2) : 5
+(S3) ==> (S5) : 17
+(S3) ..> (S6) : 30
+
+(S4) ..> (S5) : 23
+
+(S5)    #Grey
+(S5) ==> (S6) : 3
+(S5) ..> (S7) : 20
+
+(S6)    #Grey
+(S6) ==> (S7) : 16
+
+(S7)    #Grey
+
+@enduml
