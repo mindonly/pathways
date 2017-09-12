@@ -3,7 +3,7 @@
 #=
  Rob Sanchez
  CIS 677, F2017
- Project 1
+ Programming Assignment 1
  Calculating Minimum-Energy Reaction Pathways
 =#
 
@@ -180,7 +180,6 @@ function allspan(pathvec::Vector{Any}, graph::Matrix{Int})
 
     return true
 end
-
 
     # brute-force connected edge link & trace
     # [Matrix{Int}]
