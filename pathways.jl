@@ -39,12 +39,12 @@ G4 = [0 10 0  0  0  0;
       0  0 0  0  0  0;]
 
 G5 = [0 15 14 9  0  0  0;
-      0	0  0 0  0 20 37;
-      0	5  0 0 17 30  0;
-      0	0  0 0 23  0  0;
-      0	0  0 0  0  3 20;
-      0	0  0 0  0  0 16;
-      0	0  0 0  0  0  0;]
+      0	 0  0 0  0 20 37;
+      0	 5  0 0 17 30  0;
+      0	 0  0 0 23  0  0;
+      0	 0  0 0  0  3 20;
+      0	 0  0 0  0  0 16;
+      0	 0  0 0  0  0  0;]
 
 G6 = [0 2 2 2 2 2  0 0  0  0  0  0  0 0;
       0 0 0 0 0 0 10 0  0  0  0  0  0 0;
@@ -82,13 +82,50 @@ G7 = [0 3 2 1 0 0 5 0 0 0 0 0 0 0 0 0 0 0 0  0;
       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  7;
       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  0;]
 
+    # import large adjacency list
+    # return dataframe
+    #
+function import_adjlist(alf::String)
+    f = open(alf)
+    lines = readlines(f)
+    close(f)
+    aldf = DataFrame(x = Int[], y = Int[], wt = Real[])
 
-     # return tuple Set representing graph edges
-     # [Set{Tuple{Int, Int}}]
-     #
-function get_edges(mat::Matrix{Int})
+    for line in lines
+        ss = split(line)
+
+            # add 1; input file is 0-indexed
+        tup = (parse(Int, ss[1]) + 1, parse(Int, ss[2]) + 1, float(ss[3]))
+        push!(aldf, tup)
+    end
+
+    return aldf
+end
+
+    # create & return sparse matrix
+    # from dataframe
+    #
+function create_matrix(df::DataFrame)
+    xsize = maximum(df[:x])
+    ysize = maximum(df[:y])
+
+    mat = Matrix{Real}(zeros(xsize, ysize))
+
+    for row in eachrow(df)
+        mat[ row[:x], row[:y] ] = row[:wt]
+    end
+
+    # return sparse(mat)
+    return mat
+end
+
+    # return tuple Set representing graph edges
+    # [Set{Tuple{Int, Int}}]
+    #
+function get_edges(mat::Matrix)
     dimlen = size(mat)[1]
-    edgeset = Set{Tuple{Int, Int}}()
+    # edgeset = Set{Tuple{Int, Int}}()
+    edgeset = Set{Tuple}()
 
     for i = 1:dimlen
         for j = 1:dimlen
@@ -117,7 +154,7 @@ end
     # return energy cost for a single graph path
     # [Int]
     #
-function pathcost(path::Vector{Int}, adjmat::Matrix{Int})
+function pathcost(path::Vector{Int}, adjmat::Matrix)
     cost = adjmat
     xvec = Vector{Int}()
     yvec = Vector{Int}()
@@ -165,7 +202,7 @@ tuplejoin(x, y, z...) = (x..., tuplejoin(y, z...)...)
     # (source -> target)
     # [Boolean]
     #
-function allspan(pathvec::Vector{Any}, graph::Matrix{Int})
+function allspan(pathvec::Vector{Any}, graph::Matrix)
     if isempty(pathvec)
         return false
     end
@@ -182,9 +219,9 @@ function allspan(pathvec::Vector{Any}, graph::Matrix{Int})
 end
 
     # brute-force connected edge link & trace
-    # [Matrix{Int}]
+    # [Matrix]
     #
-function edgetrace(adjmat::Matrix{Int})
+function edgetrace(adjmat::Matrix)
     graph = adjmat
 
     source = 1
@@ -223,7 +260,7 @@ end
     # https://en.wikipedia.org/wiki/Dijkstra's_algorithm
     # [Tuple{Int, Vector{Int}}]
     #
-function dijkstra(adjmat::Matrix{Int})
+function dijkstra(adjmat::Matrix)
     weight = adjmat
     nodect = size(weight)[1]
     source = 1
@@ -231,7 +268,8 @@ function dijkstra(adjmat::Matrix{Int})
 
     allnodes = Set(1:nodect)
     edges = get_edges(weight)
-    distance = Vector{Int}(nodect)
+    # distance = Vector{Int}(nodect)
+    distance = Vector(nodect)
     previous = Vector{Int}(nodect)
     visited = Set{Int}([source])
     unvisited = setdiff(allnodes, visited)
@@ -289,7 +327,7 @@ end
 
     # display wrapper for edgetrace()
     #
-function edgetrace_wrapper(adjmat::Matrix{Int})
+function edgetrace_wrapper(adjmat::Matrix)
     println("[1] graph traversal costs and paths,\n    brute force connected edge tracing:\n")
 
     graph = adjmat
@@ -310,7 +348,7 @@ end
 
     # display wrapper for dijkstra()
     #
-function dijkstra_wrapper(adjmat::Matrix{Int})
+function dijkstra_wrapper(adjmat::Matrix)
     graph = adjmat
 
         # call dijkstra()
@@ -322,11 +360,14 @@ end
     # main program
     #
 function main()
+        # large graph
+    aldf = import_adjlist("10000EWD.txt")
+    G8 = create_matrix(aldf)
 
         # call edgetrace() and dijkstra() on each graph
-    for (i, graph) in enumerate([G1, G2, G3, G4, G5, G6, G7])
+    for (i, graph) in enumerate([G1, G2, G3, G4, G5, G6, G7, G8])
         println("----------\n GRAPH $i: \n----------")
-        edgetrace_wrapper(graph)
+        # edgetrace_wrapper(graph)
         dijkstra_wrapper(graph)
         println()
     end
